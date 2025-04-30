@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FRIDAY AI</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #fridayText {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 6em;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+      text-align: top-center;
+      white-space: nowrap;
+      overflow: hidden;
+      opacity: 0;
+      animation: slideIn 2s forwards;
+    }
+
+    @keyframes slideIn {
+      0% {
+        transform: translate(-50%, -50%) translateX(-100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) translateX(0);
+        opacity: 1;
+      }
+    }
+
+    #fridayText span {
+      color: #0071e3; /* Blue like Samsung */
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    path {
+      stroke-linecap: square;
+      stroke: white;
+      stroke-width: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Friday AI Text styled like Samsung Logo -->
+  <div id="fridayText">
+    <span>FRIDAY</span> <span>AI</span>
+  </div>
+
+  <svg preserveAspectRatio="none" id="visualizer" version="1.1"
+       xmlns="http://www.w3.org/2000/svg"
+       xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+      <mask id="mask">
+        <g id="maskGroup"></g>
+      </mask>
+      <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#ff0a0a;stop-opacity:1" />
+        <stop offset="20%" style="stop-color:#f1ff0a;stop-opacity:1" />
+        <stop offset="90%" style="stop-color:#d923b9;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#050d61;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="100%" height="100%" fill="url(#gradient)" mask="url(#mask)"></rect>
+  </svg>
+
+  <script>
+    window.onload = function () {
+      "use strict";
+      const visualizer = document.getElementById('visualizer');
+      const mask = visualizer.getElementById('mask');
+      const paths = [];
+
+      const soundAllowed = function (stream) {
+        window.persistAudioStream = stream;
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 1024;
+        source.connect(analyser);
+
+        const frequencyArray = new Uint8Array(analyser.frequencyBinCount);
+        visualizer.setAttribute('viewBox', '0 0 255 255');
+
+        for (let i = 0; i < 255; i++) {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('stroke-dasharray', '4,1');
+          mask.appendChild(path);
+          paths.push(path);
+        }
+
+        const draw = function () {
+          requestAnimationFrame(draw);
+          analyser.getByteFrequencyData(frequencyArray);
+          for (let i = 0; i < 255; i++) {
+            const adjusted = Math.floor(frequencyArray[i] / 5) * 5;
+            paths[i].setAttribute('d', `M ${i},255 l 0,-${adjusted}`);
+          }
+        };
+
+        draw();
+      };
+
+      const soundNotAllowed = function (err) {
+        alert("Microphone access is required.");
+        console.error(err);
+      };
+
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(soundAllowed).catch(soundNotAllowed);
+    };
+  </script>
+
+</body>
+</html>
